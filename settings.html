@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="theme-color" content="#FFD700"/>
+  <title>CJX — ตั้งค่า</title>
+  <style>
+    *{-webkit-box-sizing:border-box;box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;margin:0;padding:0;background:#E8D96A;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow:hidden}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    #root{width:100%;height:100%;height:100dvh;display:-webkit-flex;display:flex;-webkit-justify-content:center;justify-content:center;-webkit-align-items:center;align-items:center}
+    .scroll-body::-webkit-scrollbar{width:0;background:transparent}
+    .scroll-body{scrollbar-width:none;-ms-overflow-style:none}
+    .tcard{-webkit-transition:border-color .35s ease,background .35s ease;transition:border-color .35s ease,background .35s ease}
+    @-webkit-keyframes slideUp{0%{opacity:0;-webkit-transform:translateY(16px);transform:translateY(16px)}100%{opacity:1;-webkit-transform:translateY(0);transform:translateY(0)}}
+    @keyframes slideUp{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+    @-webkit-keyframes shake{0%,100%{-webkit-transform:translateX(0);transform:translateX(0)}20%,60%{-webkit-transform:translateX(-8px);transform:translateX(-8px)}40%,80%{-webkit-transform:translateX(8px);transform:translateX(8px)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+    .anim-up{-webkit-animation:slideUp .35s ease both;animation:slideUp .35s ease both}
+    .anim-shake{-webkit-animation:shake .4s ease;animation:shake .4s ease}
+    @-webkit-keyframes ptsBump{0%,100%{-webkit-transform:scale(1);transform:scale(1)}40%{-webkit-transform:scale(1.15);transform:scale(1.15)}}
+    @keyframes ptsBump{0%,100%{transform:scale(1)}40%{transform:scale(1.15)}}
+    input{-webkit-appearance:none;appearance:none;outline:none}
+    button{-webkit-appearance:none;appearance:none;outline:none}
+    @media screen and (min-width:768px){.phone-shell{width:100%;max-width:768px;height:100vh;height:100dvh;border-radius:0;overflow:hidden;-webkit-box-shadow:0 0 60px rgba(0,0,0,0.15);box-shadow:0 0 60px rgba(0,0,0,0.15)}}
+    @media screen and (min-width:1024px){.phone-shell{max-width:768px;border-radius:24px;-webkit-box-shadow:0 8px 60px rgba(0,0,0,0.2);box-shadow:0 8px 60px rgba(0,0,0,0.2)}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<script type="text/babel">
+const { useState, useRef, useCallback } = React;
+
+const C = {
+  yellow:"#FFD700",yellowPale:"#FFF4CC",yellowBorder:"#FFE87A",yellowBg:"#FFF9E6",
+  green:"#1A9E6A",greenBg:"#E6F7F0",greenBorder:"#A3DFC5",
+  red:"#D13E3E",redBg:"#FDEAEA",redBorder:"#F5AAAA",
+  ink:"#1C1800",inkMid:"#5C4500",inkLight:"#8a6b00",
+  muted:"#B0A070",border:"#F0E8C8",white:"#FFFFFF",bg:"#FFF9E6",cream:"#F0E8C8",
+};
+
+const SESSION_USER = (function(){
+  try{ return JSON.parse(sessionStorage.getItem("cjx_user")||"null"); }
+  catch(e){ return null; }
+})();
+
+// nav config
+const role = SESSION_USER?.role === "manager" ? "manager" : "staff";
+const NAV_STAFF = [
+  {icon:"ti-chart-bar",label:"ยอดขาย",href:"sales.html"},
+  {icon:"ti-clipboard-list",label:"งาน",href:"cjx_shift.html"},
+  {icon:"ti-history",label:"ประวัติ",href:"history.html"},
+  {icon:"ti-settings",label:"ตั้งค่า",href:"settings.html",on:true},
+];
+const NAV_MANAGER = [
+  {icon:"ti-chart-bar",label:"ยอดขาย",href:"sales.html"},
+  {icon:"ti-clipboard-list",label:"งานทีม",href:"cjx_shift.html"},
+  {icon:"ti-users",label:"พนักงาน",href:"admin_employees.html"},
+  {icon:"ti-settings",label:"ตั้งค่า",href:"settings.html",on:true},
+];
+const NAV = role === "manager" ? NAV_MANAGER : NAV_STAFF;
+
+function PinDot({ filled }){
+  return (
+    <div style={{width:13,height:13,borderRadius:"50%",
+      background:filled?C.ink:"transparent",
+      border:"2px solid "+(filled?C.ink:"rgba(0,0,0,0.25)"),
+      WebkitTransition:"all .2s cubic-bezier(0.34,1.56,0.64,1)",
+      transition:"all .2s cubic-bezier(0.34,1.56,0.64,1)",
+      WebkitTransform:filled?"scale(1.15)":"scale(1)",
+      transform:filled?"scale(1.15)":"scale(1)"}}/>
+  );
+}
+
+function NumPad({ onPress, onDelete }){
+  const keys=["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",rowGap:8,columnGap:8}}>
+      {keys.map((k,i)=>(
+        <button key={i} onClick={()=>k==="⌫"?onDelete():k?onPress(k):null} disabled={!k}
+          style={{height:52,borderRadius:12,fontSize:k==="⌫"?18:20,fontWeight:500,
+            background:k?C.white:"transparent",
+            color:k==="⌫"?C.inkLight:C.ink,
+            border:k?"1px solid "+C.border:"none",
+            cursor:k?"pointer":"default",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            WebkitAppearance:"none",appearance:"none",
+            WebkitTapHighlightColor:"transparent",
+            WebkitBoxShadow:k?"0 1px 3px rgba(0,0,0,0.06)":"none",
+            boxShadow:k?"0 1px 3px rgba(0,0,0,0.06)":"none"}}>
+          {k==="⌫"?<i className="ti ti-backspace"/>:k}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function App(){
+  const [view,setView]         = useState("menu"); // menu | changePinOld | changePinNew | changePinConfirm | success
+  const [oldPin,setOldPin]     = useState("");
+  const [newPin,setNewPin]     = useState("");
+  const [confirmPin,setConfirmPin] = useState("");
+  const [error,setError]       = useState("");
+  const [shakeKey,setShakeKey] = useState(0);
+  const [logoutModal,setLogoutModal] = useState(false);
+
+  const shake = useCallback(()=>setShakeKey(k=>k+1),[]);
+
+  // step: กรอก OLD pin
+  const handleOldPress = useCallback((d)=>{
+    if(oldPin.length>=4) return;
+    const next=oldPin+d; setOldPin(next); setError("");
+    if(next.length===4){
+      setTimeout(()=>{
+        const correctPin = SESSION_USER?.pin || "1234";
+        if(next===correctPin){ setView("changePinNew"); setOldPin(""); }
+        else{ setOldPin(""); setError("PIN เดิมไม่ถูกต้อง"); shake(); }
+      },80);
+    }
+  },[oldPin,shake]);
+
+  // step: กรอก NEW pin
+  const handleNewPress = useCallback((d)=>{
+    if(newPin.length>=4) return;
+    const next=newPin+d; setNewPin(next); setError("");
+    if(next.length===4) setTimeout(()=>setView("changePinConfirm"),80);
+  },[newPin]);
+
+  // step: confirm new pin
+  const handleConfirmPress = useCallback((d)=>{
+    if(confirmPin.length>=4) return;
+    const next=confirmPin+d; setConfirmPin(next); setError("");
+    if(next.length===4){
+      setTimeout(()=>{
+        if(next===newPin){
+          // บันทึก pin ใหม่ใน session
+          if(SESSION_USER){ SESSION_USER.pin=next; sessionStorage.setItem("cjx_user",JSON.stringify(SESSION_USER)); }
+          setView("success");
+        } else {
+          setConfirmPin(""); setError("PIN ไม่ตรงกัน กรุณาลองใหม่"); shake();
+        }
+      },80);
+    }
+  },[confirmPin,newPin,shake]);
+
+  const doLogout = useCallback(()=>{
+    sessionStorage.removeItem("cjx_user");
+    window.location.assign("index.html");
+  },[]);
+
+  const resetChangePin = useCallback(()=>{
+    setView("menu"); setOldPin(""); setNewPin(""); setConfirmPin(""); setError("");
+  },[]);
+
+  // current pin state
+  const curPin = view==="changePinOld"?oldPin:view==="changePinNew"?newPin:confirmPin;
+  const curDelete = view==="changePinOld"?()=>setOldPin(p=>p.slice(0,-1)):
+                    view==="changePinNew"?()=>setNewPin(p=>p.slice(0,-1)):
+                    ()=>setConfirmPin(p=>p.slice(0,-1));
+  const curPress = view==="changePinOld"?handleOldPress:
+                   view==="changePinNew"?handleNewPress:handleConfirmPress;
+  const pinLabel = view==="changePinOld"?"กรอก PIN เดิม":
+                   view==="changePinNew"?"กรอก PIN ใหม่ (4 หลัก)":"ยืนยัน PIN ใหม่อีกครั้ง";
+
+  const userInitials = SESSION_USER?.initials || "นน";
+  const userName     = SESSION_USER?.name?.split(" ")[0] || "นนทพัทธ์";
+
+  return (
+    <div className="phone-shell" style={{
+      background:C.cream,position:"relative",
+      display:"flex",flexDirection:"column",
+      width:"100%",height:"100vh",height:"100dvh",overflow:"hidden"}}>
+
+      {/* HEADER */}
+      <div style={{background:C.cream,flexShrink:0,padding:"8px 10px 0"}}>
+        <div style={{background:C.yellow,borderRadius:"20px 20px 0 0",overflow:"hidden",
+          WebkitBoxShadow:"0 4px 16px rgba(180,140,0,0.20)",
+          boxShadow:"0 4px 16px rgba(180,140,0,0.20)"}}>
+          <div style={{display:"flex",alignItems:"center",padding:"14px 16px 0"}}>
+            {view!=="menu" && (
+              <div onClick={resetChangePin}
+                style={{width:36,height:36,borderRadius:"50%",background:"rgba(0,0,0,0.12)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  color:"#3d2800",fontSize:18,cursor:"pointer",flexShrink:0,marginRight:10}}>
+                <i className="ti ti-arrow-left"/>
+              </div>
+            )}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:500,color:"rgba(0,0,0,0.4)",letterSpacing:.5,textTransform:"uppercase",marginBottom:2}}>
+                {SESSION_USER?.store||"CJX00008"} · {SESSION_USER?.storeName||"บ้านทนองรี"}
+              </div>
+              <div style={{fontSize:20,fontWeight:500,color:C.ink,lineHeight:1.2}}>ตั้งค่า</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,marginLeft:10}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:C.ink,color:C.yellow,
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:500}}>
+                {userInitials}
+              </div>
+              <div style={{fontSize:12,color:"rgba(0,0,0,0.4)",marginTop:3,whiteSpace:"nowrap"}}>{userName}</div>
+            </div>
+          </div>
+          <div style={{height:1,background:"rgba(0,0,0,0.1)",margin:"10px 16px 0"}}/>
+          <div style={{padding:"8px 16px 12px",fontSize:13,color:"rgba(0,0,0,0.45)"}}>
+            {role==="manager"?"ผู้จัดการร้าน":"พนักงานประจำร้าน"} · {SESSION_USER?.empId||"CJX001"}
+          </div>
+        </div>
+      </div>
+
+      {/* CONTENT */}
+      <div style={{flex:1,minHeight:0,position:"relative",overflow:"hidden",background:C.cream}}>
+        <div className="scroll-body" style={{height:"100%",overflowY:"auto",
+          WebkitOverflowScrolling:"touch",overscrollBehaviorY:"contain",padding:"12px 10px 24px"}}>
+
+          {/* ── MENU ── */}
+          {view==="menu" && (
+            <div className="anim-up">
+              {/* Profile card */}
+              <div style={{background:C.white,borderRadius:14,border:"1px solid "+C.border,
+                marginBottom:16,padding:"16px 16px 14px"}}>
+                <div style={{display:"flex",alignItems:"center"}}>
+                  <div style={{width:52,height:52,borderRadius:"50%",background:C.yellow,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:18,fontWeight:500,color:C.ink,marginRight:14,flexShrink:0}}>
+                    {userInitials}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:15,fontWeight:500,color:C.ink}}>{SESSION_USER?.name||"นนทพัทธ์ บัวศรีใส"}</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>{SESSION_USER?.empId||"CJX001"} · {role==="manager"?"ผู้จัดการ":"พนักงาน"}</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:1}}>{SESSION_USER?.storeName||"บ้านทนองรี"}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PIN section */}
+              <div style={{fontSize:12,fontWeight:500,color:C.muted,letterSpacing:.5,textTransform:"uppercase",marginBottom:8,paddingLeft:4}}>
+                ความปลอดภัย
+              </div>
+              <div style={{background:C.white,borderRadius:14,border:"1px solid "+C.border,marginBottom:16,overflow:"hidden"}}>
+                <div onClick={()=>setView("changePinOld")}
+                  style={{display:"flex",alignItems:"center",padding:"16px",
+                    cursor:"pointer",WebkitTapHighlightColor:"transparent",
+                    borderBottom:"1px solid "+C.border}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:C.yellowPale,
+                    display:"flex",alignItems:"center",justifyContent:"center",marginRight:12,flexShrink:0}}>
+                    <i className="ti ti-lock" style={{fontSize:18,color:C.inkLight}}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:500,color:C.ink}}>เปลี่ยน PIN</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>เปลี่ยนรหัส PIN 4 หลักของคุณ</div>
+                  </div>
+                  <i className="ti ti-chevron-right" style={{fontSize:18,color:C.muted}}/>
+                </div>
+
+
+              </div>
+
+              {/* App section */}
+              <div style={{fontSize:12,fontWeight:500,color:C.muted,letterSpacing:.5,textTransform:"uppercase",marginBottom:8,paddingLeft:4}}>
+                แอปพลิเคชัน
+              </div>
+              <div style={{background:C.white,borderRadius:14,border:"1px solid "+C.border,marginBottom:16,overflow:"hidden"}}>
+                <div style={{display:"flex",alignItems:"center",padding:"14px 16px",
+                  borderBottom:"1px solid "+C.border}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:C.yellowPale,
+                    display:"flex",alignItems:"center",justifyContent:"center",marginRight:12,flexShrink:0}}>
+                    <i className="ti ti-info-circle" style={{fontSize:18,color:C.inkLight}}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:500,color:C.ink}}>เวอร์ชัน</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>CJX Operations v1.0</div>
+                  </div>
+                </div>
+                
+              </div>
+
+              {/* Logout */}
+              <div style={{background:C.white,borderRadius:14,border:"1px solid "+C.redBorder,overflow:"hidden"}}>
+                <div onClick={()=>setLogoutModal(true)}
+                  style={{display:"flex",alignItems:"center",padding:"16px",
+                    cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:C.redBg,
+                    display:"flex",alignItems:"center",justifyContent:"center",marginRight:12,flexShrink:0}}>
+                    <i className="ti ti-logout" style={{fontSize:18,color:C.red}}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:500,color:C.red}}>ออกจากระบบ</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>กลับไปหน้า Login</div>
+                  </div>
+                  <i className="ti ti-chevron-right" style={{fontSize:18,color:C.muted}}/>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── CHANGE PIN STEPS ── */}
+          {(view==="changePinOld"||view==="changePinNew"||view==="changePinConfirm") && (
+            <div className="anim-up">
+              <div style={{background:C.white,borderRadius:14,border:"1px solid "+C.border,
+                padding:"20px 20px 16px",marginBottom:16}}>
+                <div style={{fontSize:13,color:C.muted,marginBottom:14,textAlign:"center",fontWeight:500}}>
+                  {pinLabel}
+                </div>
+                {/* step indicator */}
+                <div style={{display:"flex",justifyContent:"center",marginBottom:8}}>
+                  {["PIN เดิม","PIN ใหม่","ยืนยัน"].map((s,i)=>{
+                    const stepIdx = view==="changePinOld"?0:view==="changePinNew"?1:2;
+                    const isDone  = i<stepIdx;
+                    const isActive= i===stepIdx;
+                    return (
+                      <div key={i} style={{display:"flex",alignItems:"center"}}>
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                          <div style={{width:24,height:24,borderRadius:"50%",
+                            background:isDone?C.green:isActive?C.yellow:"#F0E8C8",
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:12,fontWeight:500,
+                            color:isDone?"#fff":isActive?C.ink:C.muted}}>
+                            {isDone?<i className="ti ti-check" style={{fontSize:12}}/>:i+1}
+                          </div>
+                          <div style={{fontSize:12,color:isActive?C.inkLight:C.muted,marginTop:3,whiteSpace:"nowrap"}}>{s}</div>
+                        </div>
+                        {i<2&&<div style={{width:32,height:1,background:C.border,margin:"0 4px",marginBottom:14}}/>}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* dots */}
+                <div key={shakeKey} className={error?"anim-shake":""}
+                  style={{display:"flex",justifyContent:"center",marginTop:12,marginBottom:error?8:16}}>
+                  <div style={{display:"flex",rowGap:14,columnGap:14}}>
+                    {[0,1,2,3].map(i=><PinDot key={i} filled={i<curPin.length}/>)}
+                  </div>
+                </div>
+                {error && (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",
+                    marginBottom:12,fontSize:12,color:C.red}}>
+                    <i className="ti ti-alert-circle" style={{fontSize:14,marginRight:4}}/>
+                    {error}
+                  </div>
+                )}
+              </div>
+              <NumPad onPress={curPress} onDelete={curDelete}/>
+            </div>
+          )}
+
+          {/* ── SUCCESS ── */}
+          {view==="success" && (
+            <div className="anim-up" style={{display:"flex",flexDirection:"column",
+              alignItems:"center",justifyContent:"center",paddingTop:40}}>
+              <div style={{width:72,height:72,borderRadius:"50%",background:C.greenBg,
+                border:"2px solid "+C.greenBorder,
+                display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20}}>
+                <i className="ti ti-check" style={{fontSize:36,color:C.green}}/>
+              </div>
+              <div style={{fontSize:18,fontWeight:500,color:C.ink,marginBottom:8}}>เปลี่ยน PIN สำเร็จ</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:32,textAlign:"center"}}>
+                PIN ใหม่ของคุณถูกบันทึกแล้ว
+              </div>
+              <button onClick={resetChangePin}
+                style={{padding:"13px 40px",fontSize:15,fontWeight:500,
+                  background:C.yellow,color:C.ink,border:"none",borderRadius:14,
+                  cursor:"pointer",WebkitAppearance:"none",appearance:"none",
+                  WebkitTapHighlightColor:"transparent",minHeight:52}}>
+                กลับหน้าตั้งค่า
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* LOGOUT MODAL */}
+      {logoutModal && (
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",
+          display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:100}}>
+          <div style={{background:C.white,borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",
+            width:"100%",maxWidth:430}}>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{width:48,height:48,borderRadius:"50%",background:C.redBg,
+                display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
+                <i className="ti ti-logout" style={{fontSize:24,color:C.red}}/>
+              </div>
+              <div style={{fontSize:17,fontWeight:500,color:C.ink,marginBottom:6}}>ออกจากระบบ?</div>
+              <div style={{fontSize:13,color:C.muted}}>คุณจะถูก redirect ไปหน้า Login</div>
+            </div>
+            <button onClick={doLogout}
+              style={{width:"100%",padding:"14px",fontSize:15,fontWeight:500,
+                background:C.red,color:"#fff",border:"none",borderRadius:14,
+                cursor:"pointer",WebkitAppearance:"none",appearance:"none",
+                WebkitTapHighlightColor:"transparent",marginBottom:10,minHeight:52}}>
+              ออกจากระบบ
+            </button>
+            <button onClick={()=>setLogoutModal(false)}
+              style={{width:"100%",padding:"14px",fontSize:15,fontWeight:500,
+                background:"transparent",color:C.muted,border:"1px solid "+C.border,
+                borderRadius:14,cursor:"pointer",WebkitAppearance:"none",appearance:"none",
+                WebkitTapHighlightColor:"transparent",minHeight:52}}>
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NAV */}
+      <div style={{background:C.cream,flexShrink:0,padding:"0 10px 10px"}}>
+        <div style={{display:"flex",background:C.white,borderTop:"1px solid "+C.border,
+          borderRadius:"0 0 20px 20px",overflow:"hidden"}}>
+          {NAV.map(n=>(
+            <div key={n.label}
+              onClick={()=>{ if(!n.on) window.location.assign(n.href); }}
+              style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
+                padding:"8px 4px 10px",fontSize:12,
+                color:n.on?C.ink:"#D4C88A",cursor:n.on?"default":"pointer",
+                minHeight:56,WebkitTapHighlightColor:"transparent",
+                WebkitTransition:"color .15s",transition:"color .15s"}}>
+              <i className={"ti "+n.icon} style={{fontSize:24,marginBottom:2,lineHeight:1}}/>
+              {n.label}
+              <div style={{width:4,height:4,borderRadius:"50%",
+                background:n.on?C.yellow:"transparent",marginTop:3}}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

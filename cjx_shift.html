@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="theme-color" content="#FFD700"/>
+  <title>CJX — สรุปผลกะเช้า</title>
+  <style>
+    *{-webkit-box-sizing:border-box;box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;margin:0;padding:0;background:#E8D96A;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow:hidden}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    #root{width:100%;height:100%;height:100dvh;display:-webkit-flex;display:flex;-webkit-justify-content:center;justify-content:center;-webkit-align-items:center;align-items:center}
+
+    .tcard{-webkit-transition:border-color .35s ease,background .35s ease;transition:border-color .35s ease,background .35s ease}
+    .tcard-chk{-webkit-transition:all .35s cubic-bezier(0.34,1.56,0.64,1);transition:all .35s cubic-bezier(0.34,1.56,0.64,1)}
+    .score-fill{-webkit-transition:width .8s cubic-bezier(0.34,1.2,0.64,1);transition:width .8s cubic-bezier(0.34,1.2,0.64,1)}
+    .ring-fg{-webkit-transition:stroke-dashoffset .9s cubic-bezier(0.34,1.2,0.64,1),stroke .4s;transition:stroke-dashoffset .9s cubic-bezier(0.34,1.2,0.64,1),stroke .4s}
+    .bump{-webkit-animation:ptsBump .4s cubic-bezier(0.34,1.56,0.64,1);animation:ptsBump .4s cubic-bezier(0.34,1.56,0.64,1)}
+    .pop-ico{-webkit-animation:popIco .5s .05s cubic-bezier(0.34,1.56,0.64,1) both;animation:popIco .5s .05s cubic-bezier(0.34,1.56,0.64,1) both}
+    .float-pts{-webkit-animation:floatUp .9s ease-out forwards;animation:floatUp .9s ease-out forwards}
+    .sh-pill{-webkit-transition:opacity .3s;transition:opacity .3s}
+
+    @-webkit-keyframes floatUp{0%{opacity:1;-webkit-transform:translateY(0) scale(1);transform:translateY(0) scale(1)}70%{opacity:1}100%{opacity:0;-webkit-transform:translateY(-48px) scale(.85);transform:translateY(-48px) scale(.85)}}
+    @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}70%{opacity:1}100%{opacity:0;transform:translateY(-48px) scale(.85)}}
+    @-webkit-keyframes ptsBump{0%,100%{-webkit-transform:scale(1);transform:scale(1)}40%{-webkit-transform:scale(1.3);transform:scale(1.3)}}
+    @keyframes ptsBump{0%,100%{transform:scale(1)}40%{transform:scale(1.3)}}
+    @-webkit-keyframes popIco{0%{-webkit-transform:scale(0) rotate(-30deg);transform:scale(0) rotate(-30deg);opacity:0}100%{-webkit-transform:scale(1) rotate(0);transform:scale(1) rotate(0);opacity:1}}
+    @keyframes popIco{0%{transform:scale(0) rotate(-30deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+
+    .scroll-body::-webkit-scrollbar{width:0;background:transparent}
+    .scroll-body{scrollbar-width:none;-ms-overflow-style:none}
+
+    @media screen and (max-width:360px){.hdr-title-el{font-size:17px!important}}
+    
+      
+    }
+
+    /* ── Responsive Breakpoints ──
+       < 768px   : Mobile   — เต็มจอ ไม่มีขอบ
+       768-1024px: Tablet   — เต็มจอ ขยายตาม iPad
+       > 1024px  : Desktop  — max-width 768px กลางจอ
+    */
+    @media screen and (min-width:768px){
+      html,body{background:#E8D96A}
+      #root{
+        display:-webkit-flex;display:flex;
+        -webkit-justify-content:center;justify-content:center;
+        -webkit-align-items:center;align-items:center;
+        height:100%;height:100dvh;
+      }
+      .phone-shell{
+        width:100%;
+        max-width:768px;
+        height:100vh;height:100dvh;
+        border-radius:0;
+        overflow:hidden;
+        -webkit-box-shadow:0 0 60px rgba(0,0,0,0.15);
+        box-shadow:0 0 60px rgba(0,0,0,0.15);
+      }
+    }
+    @media screen and (min-width:1024px){
+      .phone-shell{
+        max-width:768px;
+        border-radius:24px;
+        margin:0 auto;
+        -webkit-box-shadow:0 8px 60px rgba(0,0,0,0.2);
+        box-shadow:0 8px 60px rgba(0,0,0,0.2);
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+const C = {
+  yellow:"#FFD700", yellowDim:"#F5C200", yellowPale:"#FFF4CC",
+  yellowBorder:"#FFE87A", yellowBg:"#FFF9E6",
+  green:"#1A9E6A", greenBg:"#E6F7F0", greenBorder:"#A3DFC5",
+  red:"#D13E3E", redBg:"#FDEAEA", redBorder:"#F5AAAA",
+  ink:"#1C1800", inkMid:"#5C4500", inkLight:"#8a6b00",
+  muted:"#B0A070", border:"#F0E8C8", white:"#FFFFFF",
+  bg:"#FFF9E6", cream:"#F0E8C8",
+};
+
+const TASKS = [
+  {id:"sales", name:"ยอดขาย",             sub:"เป้า 26,295 บาท",  pts:50, initDone:true,  initBadge:"103%",        bt:"pass", initChips:[["26,977 บาท","g"],["+682 บาท","g"]]},
+  {id:"cafe",  name:"ยอดขายคาเฟ่",        sub:"เป้า 2,115 บาท",   pts:30, initDone:true,  initBadge:"113%",        bt:"pass", initChips:[["2,396 บาท","g"],["+281 บาท","g"]]},
+  {id:"member",name:"สมาชิกใหม่",          sub:"เป้า 1 คน",         pts:40, initDone:false, initBadge:"ยังไม่ผ่าน", bt:"fail", initChips:[["0 / 1 คน","r"]],    doneBadge:"ผ่าน 100%", doneChips:[["1 / 1 คน","g"]]},
+  {id:"std",   name:"มาตรฐานปิดกะ",       sub:"ปิดรูโล้กเช้า",    pts:20, initDone:false, initBadge:"ยังไม่ผ่าน", bt:"fail", initChips:[["รูปไม่ครบ","r"]],   doneBadge:"ผ่านแล้ว",  doneChips:[["ส่งรูปครบแล้ว","g"]]},
+  {id:"gas",   name:"สินค้าโฟกัส",        sub:"เป้า 1,000 บาท",   pts:25, initDone:false, initBadge:"38%",         bt:"warn", initChips:[["384 / 1,000 บาท","r"]], doneBadge:"ผ่าน 100%", doneChips:[["1,000 / 1,000 บาท","g"]]},
+  {id:"ex",    name:"แลกซื้อ",             sub:"เป้า 1,000 บาท",   pts:25, initDone:false, initBadge:"51%",         bt:"warn", initChips:[["507 / 1,000 บาท","r"]], doneBadge:"ผ่าน 100%", doneChips:[["1,000 / 1,000 บาท","g"]]},
+  {id:"temp",  name:"เช็กอุณหภูมิห้องแช่",sub:"ต้องต่ำกว่า 4°C",  pts:15, initDone:false, initBadge:"รอบันทึก",  bt:"fail", initChips:[["ยังไม่บันทึก","r"]], doneBadge:"ผ่านแล้ว",  doneChips:[["3.8°C — OK","g"]]},
+  {id:"clean", name:"ความสะอาดพื้นที่",   sub:"โซน A–D ทั้งหมด",  pts:15, initDone:false, initBadge:"รอบันทึก",  bt:"fail", initChips:[["ยังไม่ครบ","r"]],    doneBadge:"ผ่านแล้ว",  doneChips:[["โซน A–D ครบ","g"]]},
+];
+
+const MAX_PTS   = TASKS.reduce((s,t)=>s+t.pts, 0);
+const BASE_PTS  = TASKS.filter(t=>t.initDone).reduce((s,t)=>s+t.pts, 0);
+const TOTAL     = TASKS.length;
+const SECTIONS  = [
+  {label:"ผลการทำงานวันนี้", ids:["sales","cafe","member","std"]},
+  {label:"ยอดขายประจำกะ",   ids:["gas","ex"]},
+  {label:"มาตรฐานเพิ่มเติม",ids:["temp","clean"]},
+];
+const CONF_COLORS = ["#FFD700","#F5C200","#FFE87A","#1A9E6A","#A3DFC5","#D13E3E","#7F77DD","#FF9A3C","#fff","#FFF4CC"];
+
+const tmap = {};
+TASKS.forEach(t=>{ tmap[t.id] = t; });
+
+const initDoneMap = {};
+TASKS.forEach(t=>{ initDoneMap[t.id] = t.initDone; });
+
+// session
+const SESSION_USER = (function(){
+  try{ return JSON.parse(sessionStorage.getItem("cjx_user")||"null"); }
+  catch(e){ return null; }
+})();
+
+function badgeStyle(type){
+  if(type==="pass") return {background:C.greenBg, color:C.green,     border:"1px solid "+C.greenBorder};
+  if(type==="fail") return {background:C.redBg,   color:C.red,       border:"1px solid "+C.redBorder};
+  return                    {background:C.yellowPale,color:C.inkLight,border:"1px solid "+C.yellowBorder};
+}
+function chipStyle(t){
+  if(t==="g") return {background:C.greenBg, color:C.green, border:"1px solid "+C.greenBorder};
+  if(t==="r") return {background:C.redBg,   color:C.red,   border:"1px solid "+C.redBorder};
+  return              {background:C.bg,      color:C.muted, border:"1px solid "+C.border};
+}
+
+function App(){
+  const [done,setDone]         = useState({...initDoneMap});
+  const [pts,setPts]           = useState(BASE_PTS);
+  const [allOk,setAllOk]       = useState(false);
+  const [simRan,setSimRan]     = useState(false);
+  const [toast,setToast]       = useState(false);
+  const [toastMsg,setToastMsg] = useState("");
+  const [toastSec,setToastSec] = useState(4);
+  const [floats,setFloats]     = useState([]);
+  const [bumpKey,setBumpKey]   = useState(0);
+  const [scrolled,setScrolled] = useState(false);
+  const [atBottom,setAtBottom] = useState(false);
+  const [aiText,setAiText]     = useState("ยอดขายและยอดขายคาเฟ่ถึงเป้าแล้ว ได้ "+BASE_PTS+" แต้มแล้วนะคะ ทำครบอีก "+(TOTAL-2)+" รายการ จะได้ครบ "+MAX_PTS+" แต้มวันนี้เลยค่ะ");
+
+  const simTimers  = useRef([]);
+  const toastTimer = useRef(null);
+  const cntTimer   = useRef(null);
+  const cvsRef     = useRef(null);
+  const afrRef     = useRef(null);
+  const scrollRef  = useRef(null);
+  const pbarRef    = useRef(null);
+
+  const passed     = Object.values(done).filter(Boolean).length;
+  const pct        = passed / TOTAL;
+  const ringCirc   = 2 * Math.PI * 21;
+  const ringOffset = ringCirc * (1 - pct);
+
+  // canvas
+  const resizeCanvas = useCallback(()=>{
+    const cvs = cvsRef.current; if(!cvs) return;
+    const p   = cvs.parentNode;  if(!p)   return;
+    const dpr = window.devicePixelRatio || 1;
+    const w   = p.offsetWidth, h = p.offsetHeight;
+    cvs.width  = Math.floor(w*dpr);
+    cvs.height = Math.floor(h*dpr);
+    cvs.style.width  = w+"px";
+    cvs.style.height = h+"px";
+    const ctx = cvs.getContext("2d");
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr,dpr);
+  },[]);
+
+  useEffect(()=>{
+    resizeCanvas();
+    window.addEventListener("resize",resizeCanvas);
+    return ()=>window.removeEventListener("resize",resizeCanvas);
+  },[resizeCanvas]);
+
+  const addFloat = useCallback((taskId,p)=>{
+    const id = Date.now()+Math.random();
+    setFloats(f=>[...f,{id,taskId,p}]);
+    setTimeout(()=>setFloats(f=>f.filter(x=>x.id!==id)),950);
+  },[]);
+
+  const bumpPts = useCallback(()=>{ setBumpKey(k=>k+1); },[]);
+
+  const simPass = useCallback(()=>{
+    if(simRan) return;
+    setSimRan(true);
+    const pending = TASKS.filter(t=>!done[t.id]);
+    let localPts = pts;
+    pending.forEach((t,i)=>{
+      const tmr = setTimeout(()=>{
+        setDone(prev=>({...prev,[t.id]:true}));
+        localPts += t.pts;
+        const snap = localPts;
+        setPts(snap);
+        bumpPts();
+        addFloat(t.id, t.pts);
+        if(snap === MAX_PTS){
+          setAllOk(true);
+          setAiText("เยี่ยมมากเลยค่ะ ผ่านครบทุกรายการ ได้รับ "+MAX_PTS+" แต้มเต็มวันนี้เลย ทีมนี้สุดยอดมากนะคะ");
+        }
+      }, i*350);
+      simTimers.current.push(tmr);
+    });
+  },[simRan,done,pts,bumpPts,addFloat]);
+
+  const doReset = useCallback(()=>{
+    simTimers.current.forEach(clearTimeout);
+    simTimers.current = [];
+    clearTimeout(toastTimer.current);
+    clearTimeout(cntTimer.current);
+    if(afrRef.current){ cancelAnimationFrame(afrRef.current); afrRef.current=null; }
+    const cvs = cvsRef.current;
+    if(cvs) cvs.getContext("2d").clearRect(0,0,cvs.width,cvs.height);
+    setDone({...initDoneMap}); setPts(BASE_PTS); setAllOk(false); setSimRan(false);
+    setToast(false); setFloats([]); setScrolled(false); setAtBottom(false);
+    setAiText("ยอดขายและยอดขายคาเฟ่ถึงเป้าแล้ว ได้ "+BASE_PTS+" แต้มแล้วนะคะ ทำครบอีก "+(TOTAL-2)+" รายการ จะได้ครบ "+MAX_PTS+" แต้มวันนี้เลยค่ะ");
+    if(scrollRef.current) scrollRef.current.scrollTo({top:0,behavior:"smooth"});
+  },[]);
+
+  const showToast = useCallback((p)=>{
+    clearTimeout(toastTimer.current);
+    clearTimeout(cntTimer.current);
+    setToastMsg("รับทราบแล้ว — ได้รับ "+p+" แต้มวันนี้");
+    setToast(true);
+    setTimeout(()=>{
+      const pb = pbarRef.current; if(!pb) return;
+      pb.style.WebkitTransition="none"; pb.style.transition="none";
+      pb.style.width="100%"; pb.offsetWidth;
+      pb.style.WebkitTransition="width 4s linear";
+      pb.style.transition="width 4s linear";
+      pb.style.width="0%";
+    },30);
+    let rem = 4; setToastSec(rem);
+    const tick=()=>{ rem--; if(rem>0){ setToastSec(rem); cntTimer.current=setTimeout(tick,1000); } };
+    cntTimer.current = setTimeout(tick,1000);
+    toastTimer.current = setTimeout(()=>setToast(false),4000);
+  },[]);
+
+  const launchConf = useCallback(()=>{
+    resizeCanvas();
+    const cvs = cvsRef.current; if(!cvs) return;
+    const ctx = cvs.getContext("2d");
+    const w = cvs.parentNode.offsetWidth, h = cvs.parentNode.offsetHeight;
+    const pieces = Array.from({length:140},()=>({
+      x:Math.random()*w, y:-15-Math.random()*240,
+      r:3+Math.random()*5, d:1.5+Math.random()*2.5,
+      color:CONF_COLORS[Math.floor(Math.random()*CONF_COLORS.length)],
+      angle:Math.random()*Math.PI*2, ts:0.05+Math.random()*.07,
+      tilt:0, circ:Math.random()>.45, alpha:1,
+    }));
+    if(afrRef.current){ cancelAnimationFrame(afrRef.current); afrRef.current=null; }
+    let start=null; const dur=3600;
+    const draw=(ts)=>{
+      if(!start) start=ts;
+      const el=ts-start;
+      ctx.clearRect(0,0,w,h);
+      pieces.forEach(p=>{
+        p.angle+=p.ts; p.tilt=Math.sin(p.angle)*11; p.y+=p.d;
+        if(el>dur*.55) p.alpha=Math.max(0,1-(el-dur*.55)/(dur*.45));
+        ctx.save(); ctx.globalAlpha=p.alpha; ctx.fillStyle=p.color;
+        ctx.translate(p.x+p.tilt,p.y);
+        if(p.circ){ ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill(); }
+        else ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+        ctx.restore();
+      });
+      if(el<dur) afrRef.current=requestAnimationFrame(draw);
+      else{ ctx.clearRect(0,0,w,h); afrRef.current=null; }
+    };
+    afrRef.current = requestAnimationFrame(draw);
+  },[resizeCanvas]);
+
+  const doAck = useCallback(()=>{
+    if(!allOk) return;
+    showToast(pts); launchConf();
+  },[allOk,pts,showToast,launchConf]);
+
+  const onScroll = useCallback((e)=>{
+    const el = e.currentTarget;
+    setAtBottom(el.scrollHeight-el.scrollTop-el.clientHeight<10);
+    if(el.scrollTop>24) setScrolled(true);
+  },[]);
+
+  // user info
+  const userInitials = SESSION_USER ? SESSION_USER.initials : "นน";
+  const userName     = SESSION_USER ? SESSION_USER.name.split(" ")[0] : "นนทพัทธ์";
+
+
+  // ── Role-based nav ──
+  const _role = SESSION_USER?.role === "manager" ? "manager" : "staff";
+  const NAV_STAFF = [
+    {icon:"ti-chart-bar",     label:"ยอดขาย",  href:"sales.html"},
+    {icon:"ti-clipboard-list",label:"งาน",     href:"cjx_shift.html", on:true},
+    {icon:"ti-history",       label:"ประวัติ",  href:"history.html"},
+    {icon:"ti-settings",      label:"ตั้งค่า",  href:"settings.html"},
+  ];
+  const NAV_MANAGER = [
+    {icon:"ti-chart-bar",     label:"ยอดขาย",  href:"sales.html"},
+    {icon:"ti-clipboard-list",label:"งานทีม",  href:"cjx_shift.html", on:true},
+    {icon:"ti-users",         label:"พนักงาน", href:"admin_employees.html"},
+    {icon:"ti-settings",      label:"ตั้งค่า",  href:"settings.html"},
+  ];
+  const _NAV = _role === "manager" ? NAV_MANAGER : NAV_STAFF;
+
+  return (
+    <div className="phone-shell" style={{
+      background:C.cream, position:"relative",
+      display:"flex", flexDirection:"column",
+      width:"100%", height:"100vh", height:"100dvh",
+      overflow:"hidden",
+    }}>
+      <canvas ref={cvsRef} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:50}}/>
+
+      {/* ══ HEADER ══ */}
+      <div style={{background:C.cream,flexShrink:0,padding:"8px 10px 0"}}>
+        <div style={{background:C.yellow,borderRadius:"20px 20px 0 0",overflow:"hidden",
+          WebkitBoxShadow:"0 4px 16px rgba(180,140,0,0.20)",
+          boxShadow:"0 4px 16px rgba(180,140,0,0.20)"}}>
+          <div style={{display:"flex",alignItems:"center",padding:"14px 16px 0"}}>
+            <div onClick={()=>window.location.assign("index.html")}
+              style={{width:36,height:36,borderRadius:"50%",background:"rgba(0,0,0,0.12)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              color:"#3d2800",fontSize:18,cursor:"pointer",flexShrink:0,marginRight:10}}>
+              <i className="ti ti-arrow-left"/>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:500,color:"rgba(0,0,0,0.4)",letterSpacing:.5,textTransform:"uppercase",marginBottom:2}}>CJX00008 · บ้านทนองรี</div>
+              <div className="hdr-title-el" style={{fontSize:20,fontWeight:500,color:C.ink,lineHeight:1.2}}>สรุปผลกะเช้า</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,marginLeft:10}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:C.ink,color:C.yellow,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:500}}>{userInitials}</div>
+              <div style={{fontSize:12,color:"rgba(0,0,0,0.4)",marginTop:3,whiteSpace:"nowrap"}}>{userName}</div>
+            </div>
+          </div>
+          <div style={{height:1,background:"rgba(0,0,0,0.1)",margin:"10px 16px 0"}}/>
+          <div style={{display:"flex",alignItems:"center",padding:"8px 16px 12px"}}>
+            <div style={{display:"flex",alignItems:"center",marginRight:16}}>
+              <i className="ti ti-calendar" style={{fontSize:18,color:"rgba(0,0,0,0.35)",marginRight:5}}/>
+              <div>
+                <div style={{fontSize:12,color:"rgba(0,0,0,0.4)",lineHeight:1}}>วันที่</div>
+                <div style={{fontSize:13,fontWeight:500,color:"#3d2800",lineHeight:1.4}}>27 พ.ค. 2569</div>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",marginRight:"auto"}}>
+              <i className="ti ti-clock" style={{fontSize:18,color:"rgba(0,0,0,0.35)",marginRight:5}}/>
+              <div>
+                <div style={{fontSize:12,color:"rgba(0,0,0,0.4)",lineHeight:1}}>เวลา</div>
+                <div style={{fontSize:13,fontWeight:500,color:"#3d2800",lineHeight:1.4}}>06:00–14:00</div>
+              </div>
+            </div>
+            <div style={{background:"rgba(0,0,0,0.12)",borderRadius:99,padding:"4px 12px",fontSize:12,fontWeight:500,color:"#3d2800",display:"flex",alignItems:"center"}}>
+              <i className="ti ti-sun" style={{fontSize:14,marginRight:4}}/>กะเช้า
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ SCORE STRIP ══ */}
+      <div style={{background:C.cream,flexShrink:0,padding:"0 10px"}}>
+        <div style={{background:C.white,padding:"12px 16px 10px",display:"flex",alignItems:"center",
+          borderBottom:"1px solid "+C.border,
+          WebkitBoxShadow:"0 2px 8px rgba(0,0,0,0.06)",
+          boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+          <div style={{position:"relative",width:52,height:52,flexShrink:0,marginRight:12}}>
+            <svg width={52} height={52} style={{WebkitTransform:"rotate(-90deg)",transform:"rotate(-90deg)"}}>
+              <circle cx={26} cy={26} r={21} fill="none" stroke={C.border} strokeWidth={5}/>
+              <circle className="ring-fg" cx={26} cy={26} r={21} fill="none"
+                stroke={pct>=1?C.green:C.yellow} strokeWidth={5} strokeLinecap="round"
+                strokeDasharray={ringCirc.toFixed(1)}
+                strokeDashoffset={ringOffset.toFixed(1)}/>
+            </svg>
+            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:500,color:C.ink}}>{passed}/{TOTAL}</div>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,color:C.muted,marginBottom:3}}>ความคืบหน้า</div>
+            <div style={{height:5,borderRadius:99,background:C.border,overflow:"hidden",marginBottom:4}}>
+              <div className="score-fill" style={{height:"100%",borderRadius:99,background:pct>=1?C.green:C.yellow,width:Math.round(pct*100)+"%"}}/>
+            </div>
+            <div style={{fontSize:12,color:C.inkLight}}>{passed} จาก {TOTAL} รายการ</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,marginLeft:12,
+            background:C.yellowPale,border:"1.5px solid "+C.yellow,borderRadius:12,padding:"7px 10px",minWidth:62}}>
+            <div key={bumpKey} className="bump" style={{fontSize:20,fontWeight:500,color:C.inkMid,lineHeight:1}}>{pts}</div>
+            <div style={{fontSize:12,color:C.muted,marginTop:1}}>จาก {MAX_PTS}</div>
+            <div style={{fontSize:12,color:C.muted,letterSpacing:.3,textTransform:"uppercase",marginTop:1}}>แต้มวันนี้</div>
+          </div>
+        </div>
+      </div>
+
+      {/* scroll hint */}
+      {!scrolled && (
+        <div style={{display:"flex",justifyContent:"center",padding:"6px 0 3px",flexShrink:0,background:C.cream}}>
+          <div className="sh-pill" style={{fontSize:12,color:C.muted,background:C.white,border:"1px solid "+C.border,borderRadius:99,padding:"3px 12px",display:"flex",alignItems:"center"}}>
+            <i className="ti ti-chevrons-down" style={{fontSize:13,marginRight:4}}/>เลื่อนดูรายการทั้งหมด
+          </div>
+        </div>
+      )}
+
+      {/* ══ SCROLL AREA ══ */}
+      <div style={{flex:1,position:"relative",overflow:"hidden",background:C.cream,minHeight:0}}>
+        {!atBottom && (
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:32,
+            background:"linear-gradient(to bottom,rgba(240,232,200,0),#F0E8C8)",
+            pointerEvents:"none",zIndex:2}}/>
+        )}
+        <div ref={scrollRef} onScroll={onScroll} className="scroll-body"
+          style={{height:"100%",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehaviorY:"contain",padding:"8px 10px 20px"}}>
+
+          {SECTIONS.map(sec=>(
+            <div key={sec.label}>
+              <div style={{display:"flex",alignItems:"center",padding:"4px 0 8px",marginTop:sec.label==="ผลการทำงานวันนี้"?0:8}}>
+                <div style={{flex:1,height:1,background:C.border}}/>
+                <span style={{fontSize:12,fontWeight:500,letterSpacing:.6,color:C.muted,whiteSpace:"nowrap",textTransform:"uppercase",margin:"0 8px"}}>{sec.label}</span>
+                <div style={{flex:1,height:1,background:C.border}}/>
+              </div>
+
+              {sec.ids.map(id=>{
+                const t = tmap[id];
+                const isDone = done[id];
+                const badge  = isDone && t.doneBadge ? t.doneBadge : t.initBadge;
+                const bType  = isDone ? "pass" : t.bt;
+                const chips  = isDone && t.doneChips ? t.doneChips : t.initChips;
+                const myFloats = floats.filter(f=>f.taskId===id);
+                return (
+                  <div key={id} className="tcard" style={{
+                    background:isDone?"#F5FDF9":C.white,
+                    borderRadius:14,
+                    border:"1px solid "+(isDone?C.greenBorder:t.bt==="fail"?C.redBorder:C.yellowBorder),
+                    marginBottom:8,overflow:"hidden",position:"relative",minHeight:44,
+                  }}>
+                    {myFloats.map(f=>(
+                      <div key={f.id} className="float-pts" style={{position:"absolute",top:4,right:8,fontSize:12,fontWeight:500,color:C.inkMid,background:C.yellow,borderRadius:99,padding:"2px 8px",zIndex:10,pointerEvents:"none"}}>
+                        +{f.p} แต้ม
+                      </div>
+                    ))}
+                    <div style={{display:"flex"}}>
+                      <div style={{width:4,flexShrink:0,background:isDone?C.green:t.bt==="fail"?C.red:C.yellowBorder,WebkitTransition:"background .35s",transition:"background .35s"}}/>
+                      <div style={{flex:1,padding:"11px 12px 10px",minWidth:0}}>
+                        <div style={{display:"flex",alignItems:"flex-start"}}>
+                          <div className="tcard-chk" style={{width:22,height:22,borderRadius:"50%",
+                            border:"1.5px solid "+(isDone?C.green:"#D4C88A"),
+                            background:isDone?C.green:"transparent",
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            flexShrink:0,marginRight:8,marginTop:2,fontSize:12,
+                            color:isDone?"#fff":"transparent",
+                            WebkitTransform:isDone?"scale(1.1)":"scale(1)",
+                            transform:isDone?"scale(1.1)":"scale(1)"}}>
+                            <i className="ti ti-check"/>
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:14,fontWeight:500,color:C.ink,lineHeight:1.3}}>{t.name}</div>
+                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{t.sub}</div>
+                          </div>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",marginLeft:8,flexShrink:0}}>
+                            <span style={{fontSize:12,fontWeight:500,padding:"3px 9px",borderRadius:99,whiteSpace:"nowrap",...badgeStyle(bType)}}>{badge}</span>
+                            <span style={{marginTop:4,display:"inline-flex",alignItems:"center",fontSize:12,fontWeight:500,
+                              padding:"2px 7px",borderRadius:99,
+                              border:"1px solid "+(isDone?C.yellow:C.yellowBorder),
+                              color:isDone?C.inkMid:C.inkLight,
+                              background:isDone?C.yellow:C.yellowBg,
+                              whiteSpace:"nowrap",
+                              WebkitTransition:"all .35s",transition:"all .35s"}}>
+                              <i className="ti ti-star" style={{fontSize:12,marginRight:2}}/>+{t.pts} แต้ม
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{display:"flex",flexWrap:"wrap",marginTop:8,marginRight:-4}}>
+                          {chips.map(([l,ct],i)=>(
+                            <span key={i} style={{fontSize:12,padding:"3px 9px",borderRadius:99,marginRight:4,marginBottom:4,...chipStyle(ct)}}>{l}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+
+          {/* AI box */}
+          <div style={{background:"#FFFBF0",borderRadius:14,border:"1px solid "+C.yellowBorder,marginTop:10,marginBottom:4,overflow:"hidden"}}>
+            <div style={{background:C.yellowPale,padding:"8px 12px",display:"flex",alignItems:"center",borderBottom:"1px solid "+C.yellowBorder}}>
+              <i className="ti ti-sparkles" style={{fontSize:15,color:"#D4A800",marginRight:6}}/>
+              <span style={{fontSize:12,fontWeight:500,color:C.inkLight}}>คำแนะนำจาก AI</span>
+            </div>
+            <div style={{fontSize:13,color:"#7A6A30",lineHeight:1.6,padding:"10px 12px"}}>{aiText}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ TOAST ══ */}
+      <div style={{overflow:"hidden",maxHeight:toast?100:0,opacity:toast?1:0,flexShrink:0,
+        background:C.cream,padding:toast?"0 10px":0,
+        WebkitTransition:"max-height .52s cubic-bezier(0.34,1.56,0.64,1),opacity .4s ease,padding .4s ease",
+        transition:"max-height .52s cubic-bezier(0.34,1.56,0.64,1),opacity .4s ease,padding .4s ease"}}>
+        <div style={{display:"flex",alignItems:"center",marginBottom:8,padding:"12px 14px",borderRadius:14,
+          background:C.greenBg,border:"1px solid "+C.greenBorder,position:"relative",overflow:"hidden"}}>
+          <div className="pop-ico" style={{width:36,height:36,borderRadius:"50%",background:C.green,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            flexShrink:0,color:"#fff",fontSize:18,marginRight:10}}>
+            <i className="ti ti-circle-check"/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:500,color:"#0F6E4A"}}>{toastMsg}</div>
+            <div style={{fontSize:12,color:C.green,marginTop:2}}>ปิดอัตโนมัติใน {toastSec} วินาที</div>
+          </div>
+          <div ref={pbarRef} style={{position:"absolute",bottom:0,left:0,height:3,background:C.green,width:"100%"}}/>
+        </div>
+      </div>
+
+      {/* ══ BOTTOM BAR ══ */}
+      <div style={{background:C.cream,flexShrink:0,padding:"0 10px"}}>
+        <div style={{background:C.white,borderTop:"1px solid "+C.border,padding:"10px 12px 14px",
+          WebkitBoxShadow:"0 -2px 8px rgba(0,0,0,0.05)",
+          boxShadow:"0 -2px 8px rgba(0,0,0,0.05)"}}>
+          <div style={{display:"flex",marginBottom:8}}>
+            <button onClick={simPass} disabled={simRan}
+              style={{flex:1,padding:"10px 8px",fontSize:13,fontWeight:500,
+                background:"transparent",color:C.inkLight,border:"1px solid "+C.yellowBorder,
+                borderRadius:12,cursor:simRan?"not-allowed":"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                minHeight:48,opacity:simRan?.35:1,
+                WebkitAppearance:"none",appearance:"none",
+                WebkitTapHighlightColor:"transparent",marginRight:8}}>
+              <i className="ti ti-player-play" style={{fontSize:14,marginRight:4}}/>จำลองผ่านทุกเงื่อนไข
+            </button>
+            <button onClick={doReset}
+              style={{padding:"10px 14px",fontSize:13,fontWeight:500,
+                background:"transparent",color:C.muted,border:"1px solid "+C.border,
+                borderRadius:12,cursor:"pointer",minHeight:48,
+                display:"flex",alignItems:"center",
+                WebkitAppearance:"none",appearance:"none",
+                WebkitTapHighlightColor:"transparent"}}>
+              <i className="ti ti-refresh" style={{fontSize:15,marginRight:4}}/>รีเซ็ต
+            </button>
+          </div>
+          <button onClick={doAck}
+            style={{width:"100%",padding:"0 16px",fontSize:16,fontWeight:500,
+              background:allOk?C.yellow:"#F0E8C8",
+              color:allOk?C.ink:C.muted,
+              border:"none",borderRadius:14,
+              cursor:allOk?"pointer":"not-allowed",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              minHeight:54,position:"relative",overflow:"hidden",
+              WebkitAppearance:"none",appearance:"none",
+              WebkitTapHighlightColor:"transparent",
+              WebkitTransition:"background .3s,color .3s,-webkit-transform .1s",
+              transition:"background .3s,color .3s,transform .1s"}}>
+            <i className="ti ti-check" style={{fontSize:18,marginRight:6}}/>รับทราบผลการทำงาน
+          </button>
+        </div>
+      </div>
+
+      {/* ══ NAV ══ */}
+      <div style={{background:C.cream,flexShrink:0,padding:"0 10px 10px"}}>
+        <div style={{display:"flex",background:C.white,borderTop:"1px solid "+C.border,borderRadius:"0 0 20px 20px",overflow:"hidden"}}>
+          {_NAV.map(n=>(
+            <div key={n.label}
+              onClick={()=>{ if(!n.on) window.location.assign(n.href); }}
+              style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
+                padding:"8px 4px 10px",fontSize:12,
+                color:n.on?C.ink:"#D4C88A",
+                cursor:n.on?"default":"pointer",
+                minHeight:56,WebkitTapHighlightColor:"transparent",
+                WebkitTransition:"color .15s",transition:"color .15s"}}>
+              <i className={"ti "+n.icon} style={{fontSize:24,marginBottom:2,lineHeight:1}}/>
+              {n.label}
+              <div style={{width:4,height:4,borderRadius:"50%",background:n.on?C.yellow:"transparent",marginTop:3}}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

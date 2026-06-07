@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="theme-color" content="#FFD700"/>
+  <title>CJX — เข้าสู่ระบบ</title>
+  <style>
+    *{-webkit-box-sizing:border-box;box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;margin:0;padding:0;background:#E8D96A;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow:hidden}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    #root{width:100%;height:100%;height:100dvh;display:-webkit-flex;display:flex;-webkit-justify-content:center;justify-content:center;-webkit-align-items:center;align-items:center}
+
+    @-webkit-keyframes fadeSlideUp{0%{opacity:0;-webkit-transform:translateY(24px);transform:translateY(24px)}100%{opacity:1;-webkit-transform:translateY(0);transform:translateY(0)}}
+    @keyframes fadeSlideUp{0%{opacity:0;transform:translateY(24px)}100%{opacity:1;transform:translateY(0)}}
+    @-webkit-keyframes logoBounce{0%{-webkit-transform:scale(0.5) rotate(-10deg);transform:scale(0.5) rotate(-10deg);opacity:0}70%{-webkit-transform:scale(1.08) rotate(2deg);transform:scale(1.08) rotate(2deg);opacity:1}100%{-webkit-transform:scale(1) rotate(0deg);transform:scale(1) rotate(0deg);opacity:1}}
+    @keyframes logoBounce{0%{transform:scale(0.5) rotate(-10deg);opacity:0}70%{transform:scale(1.08) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+    @-webkit-keyframes shake{0%,100%{-webkit-transform:translateX(0);transform:translateX(0)}20%,60%{-webkit-transform:translateX(-8px);transform:translateX(-8px)}40%,80%{-webkit-transform:translateX(8px);transform:translateX(8px)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+    @-webkit-keyframes spin{to{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .anim-logo{-webkit-animation:logoBounce .6s cubic-bezier(0.34,1.56,0.64,1) both;animation:logoBounce .6s cubic-bezier(0.34,1.56,0.64,1) both}
+    .anim-card{-webkit-animation:fadeSlideUp .5s .15s ease both;animation:fadeSlideUp .5s .15s ease both}
+    .anim-shake{-webkit-animation:shake .4s ease;animation:shake .4s ease}
+    .spinner{-webkit-animation:spin .8s linear infinite;animation:spin .8s linear infinite}
+
+    input{-webkit-appearance:none;appearance:none;outline:none}
+    input:focus{outline:none}
+    button{-webkit-appearance:none;appearance:none;outline:none;cursor:pointer}
+    button:active{-webkit-transform:scale(0.98);transform:scale(0.98)}
+    /* tablet/desktop: mobile frame กลางจอ — เหมือน cjx_shift.html */
+    @media screen and (min-width:600px){
+      html,body{background:#E8D96A}
+      #root{display:flex;justify-content:center;align-items:center;height:100%;height:100dvh}
+      
+    }
+
+    /* ── Responsive Breakpoints ──
+       < 768px   : Mobile   — เต็มจอ ไม่มีขอบ
+       768-1024px: Tablet   — เต็มจอ ขยายตาม iPad
+       > 1024px  : Desktop  — max-width 768px กลางจอ
+    */
+    @media screen and (min-width:768px){
+      html,body{background:#E8D96A}
+      #root{
+        display:-webkit-flex;display:flex;
+        -webkit-justify-content:center;justify-content:center;
+        -webkit-align-items:center;align-items:center;
+        height:100%;height:100dvh;
+      }
+      .phone-shell{
+        width:100%;
+        max-width:768px;
+        height:100vh;height:100dvh;
+        border-radius:0;
+        overflow:hidden;
+        -webkit-box-shadow:0 0 60px rgba(0,0,0,0.15);
+        box-shadow:0 0 60px rgba(0,0,0,0.15);
+      }
+    }
+    @media screen and (min-width:1024px){
+      .phone-shell{
+        max-width:768px;
+        border-radius:24px;
+        margin:0 auto;
+        -webkit-box-shadow:0 8px 60px rgba(0,0,0,0.2);
+        box-shadow:0 8px 60px rgba(0,0,0,0.2);
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<script type="text/babel">
+const { useState, useRef, useCallback } = React;
+
+const C = {
+  yellow:"#FFD700", yellowDim:"#F5C200", yellowPale:"#FFF4CC",
+  yellowBorder:"#FFE87A", yellowBg:"#FFF9E6",
+  green:"#1A9E6A", greenBg:"#E6F7F0", greenBorder:"#A3DFC5",
+  red:"#D13E3E", redBg:"#FDEAEA", redBorder:"#F5AAAA",
+  ink:"#1C1800", inkMid:"#5C4500", inkLight:"#8a6b00",
+  muted:"#B0A070", border:"#F0E8C8", white:"#FFFFFF",
+  cream:"#F0E8C8",
+};
+
+const MOCK_USERS = [
+  { empId:"CJX001", pin:"1234", name:"นนทพัทธ์ บัวศรีใส", initials:"นน", store:"CJX00008", storeName:"บ้านทนองรี", role:"staff", shift:"morning" },
+  { empId:"CJX002", pin:"5678", name:"สมชาย ใจดี",        initials:"สช", store:"CJX00008", storeName:"บ้านทนองรี", role:"manager",      shift:"morning" },
+];
+
+function PinDot({ filled }){
+  return (
+    <div style={{
+      width:14, height:14, borderRadius:"50%",
+      background: filled ? C.ink : "transparent",
+      border:`2px solid ${filled ? C.ink : "rgba(0,0,0,0.25)"}`,
+      WebkitTransition:"all .2s cubic-bezier(0.34,1.56,0.64,1)",
+      transition:"all .2s cubic-bezier(0.34,1.56,0.64,1)",
+      WebkitTransform: filled ? "scale(1.15)" : "scale(1)",
+      transform: filled ? "scale(1.15)" : "scale(1)",
+    }}/>
+  );
+}
+
+function NumPad({ onPress, onDelete }){
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",rowGap:10,columnGap:10}}>
+      {keys.map((k,i)=>(
+        <button key={i}
+          onClick={()=> k==="⌫" ? onDelete() : k ? onPress(k) : null}
+          disabled={!k}
+          style={{
+            height:56,borderRadius:14,fontSize:k==="⌫"?20:22,fontWeight:500,
+            background:k?C.white:"transparent",
+            color:k==="⌫"?C.inkLight:C.ink,
+            border:k?`1px solid ${C.border}`:"none",
+            cursor:k?"pointer":"default",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            WebkitAppearance:"none",appearance:"none",
+            WebkitTapHighlightColor:"transparent",
+            WebkitBoxShadow:k?"0 1px 4px rgba(0,0,0,0.06)":"none",
+            boxShadow:k?"0 1px 4px rgba(0,0,0,0.06)":"none",
+            WebkitTransition:"-webkit-transform .1s",transition:"transform .1s",
+          }}>
+          {k==="⌫" ? <i className="ti ti-backspace"/> : k}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function App(){
+  const [step,setStep]           = useState("empId");
+  const [empId,setEmpId]         = useState("");
+  const [pin,setPin]             = useState("");
+  const [foundUser,setFoundUser] = useState(null);
+  const [error,setError]         = useState("");
+  const [shakeKey,setShakeKey]   = useState(0);
+
+  // ── step 1 ──
+  const handleEmpIdNext = useCallback(()=>{
+    const u = MOCK_USERS.find(u=>u.empId.toLowerCase()===empId.trim().toLowerCase());
+    if(!u){ setError("ไม่พบรหัสพนักงานนี้ในระบบ"); setShakeKey(k=>k+1); return; }
+    setFoundUser(u); setError(""); setStep("pin");
+  },[empId]);
+
+  // ── step 2 ──
+  const handlePinPress = useCallback((digit)=>{
+    if(pin.length>=4) return;
+    const next = pin+digit;
+    setPin(next); setError("");
+    if(next.length===4){
+      setTimeout(()=>{
+        if(next===foundUser.pin){
+          setStep("loading");
+          sessionStorage.setItem("cjx_user", JSON.stringify(foundUser));
+          setTimeout(()=>{ window.location.assign("cjx_shift.html"); },1000);
+        } else {
+          setPin(""); setError("PIN ไม่ถูกต้อง กรุณาลองใหม่"); setShakeKey(k=>k+1);
+        }
+      },80);
+    }
+  },[pin,foundUser]);
+
+  const handlePinDelete = useCallback(()=>{ setPin(p=>p.slice(0,-1)); setError(""); },[]);
+  const handleBack = useCallback(()=>{ setStep("empId"); setPin(""); setError(""); setFoundUser(null); },[]);
+
+  // ── loading ──
+  if(step==="loading"){
+    return (
+      <div style={{
+        background:C.cream,display:"flex",flexDirection:"column",
+        width:"100%",height:"100vh",height:"100dvh",
+        alignItems:"center",justifyContent:"center",overflow:"hidden",
+      }}>
+        <div style={{textAlign:"center"}}>
+          <div style={{width:64,height:64,borderRadius:"50%",background:C.yellow,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            margin:"0 auto 20px",
+            WebkitBoxShadow:"0 4px 20px rgba(180,140,0,0.3)",
+            boxShadow:"0 4px 20px rgba(180,140,0,0.3)"}}>
+            <i className="spinner ti ti-loader" style={{fontSize:28,color:C.ink}}/>
+          </div>
+          <div style={{fontSize:16,fontWeight:500,color:C.ink,marginBottom:6}}>กำลังเข้าสู่ระบบ</div>
+          <div style={{fontSize:13,color:C.muted}}>สวัสดี {foundUser?.name?.split(" ")[0]}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="phone-shell" style={{
+      background:C.cream,
+      position:"relative",
+      display:"flex",
+      flexDirection:"column",
+      width:"100%",
+      height:"100vh",
+      height:"100dvh",
+      overflow:"hidden",
+    }}>
+
+      {/* ══ HEADER ══ */}
+      <div style={{background:C.cream,flexShrink:0,padding:"8px 10px 0"}}>
+        <div style={{
+          background:C.yellow,
+          borderRadius:"20px 20px 0 0",
+          overflow:"hidden",
+          WebkitBoxShadow:"0 4px 16px rgba(180,140,0,0.20)",
+          boxShadow:"0 4px 16px rgba(180,140,0,0.20)",
+          padding:"18px 20px",
+          display:"flex",alignItems:"center",
+        }}>
+          {step==="pin" && (
+            <button onClick={handleBack} style={{
+              width:36,height:36,borderRadius:"50%",
+              background:"rgba(0,0,0,0.12)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              color:"#3d2800",fontSize:18,border:"none",
+              flexShrink:0,marginRight:12,
+              WebkitAppearance:"none",appearance:"none",
+              WebkitTapHighlightColor:"transparent",
+            }}>
+              <i className="ti ti-arrow-left"/>
+            </button>
+          )}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:500,color:"rgba(0,0,0,0.4)",
+              letterSpacing:.5,textTransform:"uppercase",marginBottom:3}}>
+              CJX Operations
+            </div>
+            <div style={{fontSize:22,fontWeight:500,color:C.ink,lineHeight:1.2}}>
+              {step==="pin" ? `สวัสดี ${foundUser?.name?.split(" ")[0]}` : "เข้าสู่ระบบ"}
+            </div>
+            <div style={{fontSize:13,color:"rgba(0,0,0,0.5)",marginTop:3}}>
+              {step==="pin" ? `${foundUser?.store} · ${foundUser?.storeName}` : "ระบบจัดการร้าน CJX"}
+            </div>
+          </div>
+          <div className="anim-logo" style={{
+            width:56,height:56,borderRadius:14,
+            overflow:"hidden",
+            flexShrink:0,marginLeft:12,
+            WebkitBoxShadow:"0 2px 12px rgba(0,0,0,0.15)",
+            boxShadow:"0 2px 12px rgba(0,0,0,0.15)",
+          }}>
+            <img src="cjx_logo.png" alt="CJX Logo"
+              style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ CARD (fused below header) ══ */}
+      <div style={{background:C.cream,flexShrink:0,padding:"0 10px"}}>
+        <div className="anim-card" style={{
+          background:C.white,
+          WebkitBoxShadow:"0 2px 8px rgba(0,0,0,0.06)",
+          boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
+          padding:"22px 20px 20px",
+        }}>
+
+          {/* STEP 1 — Employee ID */}
+          {step==="empId" && (
+            <div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:8,fontWeight:500}}>รหัสพนักงาน</div>
+              <div style={{position:"relative"}}>
+                <i className="ti ti-id-badge" style={{
+                  position:"absolute",left:14,top:"50%",marginTop:-10,
+                  fontSize:20,color:C.muted,pointerEvents:"none",
+                }}/>
+                <input
+                  type="text"
+                  value={empId}
+                  onChange={e=>{ setEmpId(e.target.value.toUpperCase()); setError(""); }}
+                  onKeyDown={e=>{ if(e.key==="Enter") handleEmpIdNext(); }}
+                  placeholder="เช่น CJX001"
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  style={{
+                    width:"100%",padding:"14px 14px 14px 46px",
+                    fontSize:16,fontWeight:500,color:C.ink,
+                    background:"#FAFAFA",
+                    border:`1.5px solid ${error?C.redBorder:empId?C.yellowBorder:C.border}`,
+                    borderRadius:12,letterSpacing:1,
+                    WebkitTransition:"border-color .2s",transition:"border-color .2s",
+                  }}
+                />
+              </div>
+              {error && (
+                <div style={{display:"flex",alignItems:"center",marginTop:8,fontSize:12,color:C.red}}>
+                  <i className="ti ti-alert-circle" style={{fontSize:14,marginRight:4}}/>
+                  {error}
+                </div>
+              )}
+              <button onClick={handleEmpIdNext}
+                style={{
+                  width:"100%",marginTop:16,padding:"0 16px",
+                  fontSize:15,fontWeight:500,
+                  background:empId?C.yellow:"#F0E8C8",
+                  color:empId?C.ink:C.muted,
+                  border:"none",borderRadius:14,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  minHeight:52,
+                  WebkitAppearance:"none",appearance:"none",
+                  WebkitTapHighlightColor:"transparent",
+                  WebkitTransition:"background .2s,color .2s",
+                  transition:"background .2s,color .2s",
+                  cursor:empId?"pointer":"not-allowed",
+                }}>
+                ถัดไป <i className="ti ti-arrow-right" style={{fontSize:16,marginLeft:6}}/>
+              </button>
+              <div style={{marginTop:14,padding:"10px 12px",background:C.yellowPale,
+                borderRadius:10,border:`1px solid ${C.yellowBorder}`}}>
+                <div style={{fontSize:12,color:C.inkLight,display:"flex",alignItems:"flex-start"}}>
+                  <i className="ti ti-info-circle" style={{fontSize:14,marginRight:6,flexShrink:0,marginTop:1}}/>
+                  <span>Demo: ใช้รหัส <strong>CJX001</strong> หรือ <strong>CJX002</strong></span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 — PIN */}
+          {step==="pin" && (
+            <div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:14,textAlign:"center",fontWeight:500}}>
+                กรอก PIN 4 หลัก
+              </div>
+              <div key={shakeKey} className={error?"anim-shake":""}
+                style={{display:"flex",justifyContent:"center",marginBottom:error?8:14}}>
+                <div style={{display:"flex",rowGap:16,columnGap:16}}>
+                  {[0,1,2,3].map(i=>(<PinDot key={i} filled={i<pin.length}/>))}
+                </div>
+              </div>
+              {error && (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",
+                  marginBottom:10,fontSize:12,color:C.red}}>
+                  <i className="ti ti-alert-circle" style={{fontSize:14,marginRight:4}}/>
+                  {error}
+                </div>
+              )}
+              <div style={{display:"flex",justifyContent:"center"}}>
+                <span style={{fontSize:12,padding:"3px 10px",borderRadius:99,
+                  background:C.yellowPale,color:C.inkLight,
+                  border:`1px solid ${C.yellowBorder}`,
+                  display:"inline-flex",alignItems:"center"}}>
+                  <i className="ti ti-shield-check" style={{fontSize:12,marginRight:3}}/>
+                  {foundUser?.role}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ══ NUMPAD — flex:1 ยืดเต็มพื้นที่ที่เหลือ ══ */}
+      {step==="pin" && (
+        <div style={{
+          flex:1,minHeight:0,
+          display:"flex",flexDirection:"column",justifyContent:"center",
+          padding:"12px 20px 8px",
+          background:C.cream,
+        }}>
+          <NumPad onPress={handlePinPress} onDelete={handlePinDelete}/>
+          <div style={{textAlign:"center",marginTop:12}}>
+            <div style={{fontSize:12,color:C.muted}}>
+              Demo PIN: <strong style={{color:C.inkMid}}>1234</strong> (CJX001) &nbsp;/&nbsp; <strong style={{color:C.inkMid}}>5678</strong> (CJX002)
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ EMPTY SPACE (step empId) ══ */}
+      {step==="empId" && <div style={{flex:1,minHeight:0,background:C.cream}}/>}
+
+      {/* ══ FOOTER ══ */}
+      <div style={{
+        flexShrink:0,
+        background:C.cream,
+        padding:"8px 10px 14px",
+        textAlign:"center",
+      }}>
+        <div style={{fontSize:12,color:C.muted}}>CJX Operations v1.0 · © 2569</div>
+      </div>
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
