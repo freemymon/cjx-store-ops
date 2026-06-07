@@ -1,6 +1,6 @@
 {
   "name": "CJX Store Ops",
-  "short_name": "CJX Ops",
+  "short_name": "CJX Store Ops",
   "description": "ระบบจัดการร้าน CJX สำหรับพนักงานประจำร้าน",
   "start_url": "/cjx-store-ops/index.html",
   "display": "standalone",
